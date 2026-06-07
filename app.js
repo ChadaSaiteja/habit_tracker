@@ -8,11 +8,11 @@ if (!app) {
 }
 
 const state = {
+  storageAvailable: canUseLocalStorage(),
   tracker: loadTracker(),
   selectedMonth: monthKey(new Date()),
   dragHabitId: null,
-  editingHabitId: null,
-  storageAvailable: true
+  editingHabitId: null
 };
 
 render();
@@ -73,16 +73,7 @@ app.addEventListener("click", (event) => {
   if (action === "start-edit") {
     state.editingHabitId = target.dataset.habitId || null;
     render();
-
-    if (state.editingHabitId) {
-      requestAnimationFrame(() => {
-        const editInput = app.querySelector(`[data-edit-form][data-habit-id="${state.editingHabitId}"] input[name='habitName']`);
-        if (editInput instanceof HTMLInputElement) {
-          editInput.focus();
-          editInput.select();
-        }
-      });
-    }
+    focusEditInput();
     return;
   }
 
@@ -170,7 +161,6 @@ function render() {
           <p>Your habits may not be saved in this browser session.</p>
         </section>
       `}
-
       <section class="panel hero">
         <div class="hero-inner">
           <div>
@@ -484,9 +474,7 @@ function toggleCompletion(habitId, dayKey, checked) {
   state.tracker.completions[dayKey] = Array.from(set);
   saveTracker();
 
-  const checkbox = app.querySelector(
-    `input[data-habit-id="${habitId}"][data-day-key="${dayKey}"]`
-  );
+  const checkbox = app.querySelector(`input[data-habit-id="${habitId}"][data-day-key="${dayKey}"]`);
   const label = checkbox instanceof HTMLInputElement ? checkbox.closest("label") : null;
   if (label) {
     label.classList.toggle("is-done", checked);
@@ -570,10 +558,24 @@ function isCompleted(habitId, dayKey) {
   return (state.tracker.completions[dayKey] || []).includes(habitId);
 }
 
+function canUseLocalStorage() {
+  try {
+    const testKey = `${STORAGE_KEY}.availability-test`;
+    localStorage.setItem(testKey, "ok");
+    localStorage.removeItem(testKey);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function loadTracker() {
+  if (!state.storageAvailable) {
+    return { habits: [], completions: {} };
+  }
+
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    state.storageAvailable = true;
     if (!raw) {
       return { habits: [], completions: {} };
     }
@@ -593,17 +595,20 @@ function loadTracker() {
 
     return { habits, completions };
   } catch {
-    state.storageAvailable = false;
     return { habits: [], completions: {} };
   }
 }
 
 function saveTracker() {
+  if (!state.storageAvailable) {
+    return;
+  }
+
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tracker));
-    state.storageAvailable = true;
   } catch {
     state.storageAvailable = false;
+    render();
   }
 }
 
@@ -613,6 +618,20 @@ function createHabitId() {
   }
 
   return `habit-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function focusEditInput() {
+  if (!state.editingHabitId) {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    const input = app.querySelector(`[data-edit-form][data-habit-id="${state.editingHabitId}"] input[name='habitName']`);
+    if (input instanceof HTMLInputElement) {
+      input.focus();
+      input.select();
+    }
+  });
 }
 
 function clearDragTargets() {

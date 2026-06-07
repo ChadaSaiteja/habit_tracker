@@ -6,7 +6,6 @@
 
 | Platform | URL |
 |---|---|
-| **Cloudflare Workers** | https://habitracker.chadasaiteja.workers.dev |
 | **GitHub Pages** | https://chadasaiteja.github.io/habit_tracker/ |
 
 ---

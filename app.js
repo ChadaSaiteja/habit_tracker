@@ -7,9 +7,11 @@ if (!app) {
   throw new Error("App root not found.");
 }
 
+const storageAvailable = canUseLocalStorage();
+
 const state = {
-  storageAvailable: canUseLocalStorage(),
-  tracker: loadTracker(),
+  storageAvailable,
+  tracker: loadTracker(storageAvailable),
   selectedMonth: monthKey(new Date()),
   dragHabitId: null,
   editingHabitId: null
@@ -569,8 +571,8 @@ function canUseLocalStorage() {
   }
 }
 
-function loadTracker() {
-  if (!state.storageAvailable) {
+function loadTracker(storageAvail) {
+  if (!storageAvail) {
     return { habits: [], completions: {} };
   }
 

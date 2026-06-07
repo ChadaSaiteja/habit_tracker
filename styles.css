@@ -66,7 +66,7 @@ button {
 
 .shell {
   display: grid;
-  gap: 1rem;
+  gap: 1.4rem;
 }
 
 /* ── Panel Base ─────────────────────────────────────────── */
@@ -74,19 +74,19 @@ button {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(100, 160, 210, 0.18);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  transition: box-shadow var(--transition);
+  transition: box-shadow var(--transition), transform var(--transition);
 }
 
 .panel:hover {
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(100, 160, 210, 0.25);
 }
 
 /* ── Hero ───────────────────────────────────────────────── */
 .hero {
-  padding: 1.4rem 1.5rem 1.3rem;
+  padding: 1.75rem 2rem 1.6rem;
   position: relative;
   overflow: hidden;
 }
@@ -116,15 +116,16 @@ button {
 }
 
 .hero-icon {
-  width: 2.8rem;
-  height: 2.8rem;
+  width: 3.4rem;
+  height: 3.4rem;
   background: linear-gradient(135deg, var(--accent), #2bb377);
-  border-radius: 12px;
+  border-radius: 14px;
   display: grid;
   place-items: center;
-  font-size: 1.3rem;
-  box-shadow: 0 4px 18px rgba(62, 207, 142, 0.35);
+  font-size: 1.6rem;
+  box-shadow: 0 4px 24px rgba(62, 207, 142, 0.45);
   flex-shrink: 0;
+  animation: iconGlow 3.5s ease-in-out infinite;
 }
 
 .hero h1 {
@@ -147,40 +148,43 @@ button {
 
 .hero-stats {
   display: flex;
-  gap: 0.55rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
-  margin-top: 1.1rem;
+  margin-top: 1.4rem;
 }
 
 .stat-chip {
-  padding: 0.42rem 0.85rem;
+  padding: 0.52rem 1rem;
   border-radius: 999px;
   background: var(--surface-alt);
   border: 1px solid var(--line-bright);
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 600;
   color: var(--text-dim);
   display: inline-flex;
   align-items: center;
-  gap: 0.38rem;
+  gap: 0.42rem;
   transition: all var(--transition);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .stat-chip:hover {
   border-color: var(--accent);
   color: var(--accent);
   background: var(--accent-soft);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(62, 207, 142, 0.18);
 }
 
 .stat-chip .stat-icon {
-  font-size: 0.88rem;
+  font-size: 0.92rem;
 }
 
 /* ── Controls Panel ─────────────────────────────────────── */
 .controls {
   display: grid;
-  gap: 0.85rem;
-  padding: 1.1rem 1.25rem;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
 }
 
 .controls-top {
@@ -208,15 +212,34 @@ button {
 .month-bar {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
 }
 
 .month-bar strong {
-  min-width: 10rem;
+  min-width: 11rem;
   text-align: center;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.92rem;
+  font-weight: 700;
   color: var(--text);
+}
+
+.month-bar button {
+  border: 1px solid var(--line-bright) !important;
+  background: rgba(20, 38, 58, 0.8) !important;
+  color: var(--text-dim) !important;
+  border-radius: 999px !important;
+  padding: 0.45rem 1.05rem !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+}
+
+.month-bar button:not(:disabled):hover {
+  background: var(--accent-soft) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(62, 207, 142, 0.2) !important;
 }
 
 /* ── Buttons ────────────────────────────────────────────── */
@@ -305,12 +328,12 @@ button {
 
 .add-form input {
   width: 100%;
-  padding: 0.72rem 1rem;
+  padding: 0.82rem 1.1rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line-bright);
   background: rgba(8, 20, 32, 0.7);
   color: var(--text);
-  font-size: 0.92rem;
+  font-size: 0.93rem;
   outline: none;
   transition: all var(--transition);
 }
@@ -331,13 +354,15 @@ button {
   border-color: transparent !important;
   font-weight: 700 !important;
   border-radius: var(--radius-sm) !important;
-  padding: 0.72rem 1.2rem !important;
+  padding: 0.82rem 1.4rem !important;
+  font-size: 0.92rem !important;
+  letter-spacing: 0.01em;
 }
 
 .add-form button:hover {
   background: linear-gradient(135deg, #5ef0a8, #3ecf8e) !important;
-  box-shadow: 0 4px 18px rgba(62, 207, 142, 0.35) !important;
-  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(62, 207, 142, 0.4) !important;
+  transform: translateY(-2px) !important;
 }
 
 /* ── Sheet / Table ──────────────────────────────────────── */
@@ -400,15 +425,15 @@ button {
 }
 
 .task-col {
-  min-width: 215px;
-  max-width: 215px;
+  min-width: 222px;
+  max-width: 222px;
   text-align: left;
-  padding: 0.6rem 0.85rem;
+  padding: 0.65rem 0.9rem;
 }
 
 .date-head {
-  min-width: 36px;
-  padding: 0.45rem 0.1rem;
+  min-width: 38px;
+  padding: 0.5rem 0.1rem;
   font-size: 0.71rem;
   font-weight: 700;
   color: var(--muted);
@@ -417,7 +442,8 @@ button {
 
 .date-head.is-today {
   color: var(--accent);
-  background: rgba(62, 207, 142, 0.1) !important;
+  background: rgba(62, 207, 142, 0.12) !important;
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 /* ── Habit Row ──────────────────────────────────────────── */
@@ -427,12 +453,12 @@ button {
 
 .task-row:hover td,
 .task-row:hover th {
-  background: rgba(62, 207, 142, 0.04);
+  background: rgba(62, 207, 142, 0.055);
 }
 
 .task-row td {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
 }
 
 .task-name {
@@ -586,8 +612,8 @@ button {
 }
 
 .cell input[type="checkbox"] {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
   margin: 0;
   accent-color: var(--accent);
   cursor: pointer;
@@ -595,7 +621,8 @@ button {
 }
 
 .cell input[type="checkbox"]:hover {
-  transform: scale(1.2);
+  transform: scale(1.25);
+  filter: drop-shadow(0 0 4px rgba(62, 207, 142, 0.5));
 }
 
 .cell.is-locked {
@@ -608,7 +635,7 @@ button {
 }
 
 .cell.is-done {
-  background: var(--accent-soft);
+  background: rgba(62, 207, 142, 0.18);
 }
 
 .cell-mark {
@@ -660,7 +687,7 @@ button {
 
 /* ── Chart Panel ────────────────────────────────────────── */
 .chart-panel {
-  padding: 1.1rem 1.25rem 1.25rem;
+  padding: 1.4rem 1.6rem 1.5rem;
 }
 
 .chart-head {
@@ -674,16 +701,16 @@ button {
 
 .chart-head-text h2 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text);
 }
 
 .chart-head-text p {
-  margin: 0.22rem 0 0;
+  margin: 0.25rem 0 0;
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.83rem;
 }
 
 .chart-badge {
@@ -707,7 +734,7 @@ button {
 
 .chart-box svg {
   width: 100%;
-  height: 200px;
+  height: 240px;
   display: block;
 }
 
@@ -749,20 +776,21 @@ button {
 
 /* ── Empty State ────────────────────────────────────────── */
 .empty-state {
-  padding: 2.5rem 1.5rem 2rem;
+  padding: 3rem 1.5rem 2.5rem;
   text-align: center;
   border-top: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.7rem;
 }
 
 .empty-icon {
-  font-size: 2.8rem;
+  font-size: 3.4rem;
   line-height: 1;
-  margin-bottom: 0.3rem;
-  filter: drop-shadow(0 0 12px rgba(62, 207, 142, 0.3));
+  margin-bottom: 0.5rem;
+  filter: drop-shadow(0 0 18px rgba(62, 207, 142, 0.4));
+  animation: iconGlow 3.5s ease-in-out infinite;
 }
 
 .empty-state strong {
@@ -807,8 +835,13 @@ button {
 
 /* ── Animations ─────────────────────────────────────────── */
 @keyframes fadeSlideIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes iconGlow {
+  0%, 100% { box-shadow: 0 4px 18px rgba(62, 207, 142, 0.35); }
+  50%       { box-shadow: 0 4px 32px rgba(62, 207, 142, 0.65), 0 0 0 6px rgba(62, 207, 142, 0.08); }
 }
 
 .shell > * {
@@ -847,14 +880,14 @@ button {
   }
 
   .task-col {
-    min-width: 170px;
-    max-width: 170px;
+    min-width: 175px;
+    max-width: 175px;
   }
 
   .date-head,
   .task-row td {
-    width: 34px;
-    min-width: 34px;
+    width: 36px;
+    min-width: 36px;
   }
 
   .hero-inner {

@@ -11,7 +11,8 @@ const state = {
   tracker: loadTracker(),
   selectedMonth: monthKey(new Date()),
   dragHabitId: null,
-  editingHabitId: null
+  editingHabitId: null,
+  storageAvailable: true
 };
 
 render();
@@ -72,6 +73,16 @@ app.addEventListener("click", (event) => {
   if (action === "start-edit") {
     state.editingHabitId = target.dataset.habitId || null;
     render();
+
+    if (state.editingHabitId) {
+      requestAnimationFrame(() => {
+        const editInput = app.querySelector(`[data-edit-form][data-habit-id="${state.editingHabitId}"] input[name='habitName']`);
+        if (editInput instanceof HTMLInputElement) {
+          editInput.focus();
+          editInput.select();
+        }
+      });
+    }
     return;
   }
 
@@ -85,7 +96,6 @@ app.addEventListener("click", (event) => {
     addHabit(target.dataset.name || "");
     return;
   }
-
 });
 
 app.addEventListener("dragstart", (event) => {
@@ -130,6 +140,18 @@ app.addEventListener("dragend", () => {
   app.querySelectorAll(".task-row.is-dragging").forEach((row) => row.classList.remove("is-dragging"));
 });
 
+app.addEventListener("submit", (event) => {
+  if (!(event.target instanceof HTMLFormElement) || !event.target.matches("[data-edit-form]")) {
+    return;
+  }
+
+  event.preventDefault();
+  const habitId = event.target.dataset.habitId || "";
+  const input = event.target.querySelector("input[name='habitName']");
+  const value = input instanceof HTMLInputElement ? input.value.trim() : "";
+  renameHabit(habitId, value);
+});
+
 function render() {
   const today = new Date();
   const todayKey = dateKey(today);
@@ -137,11 +159,18 @@ function render() {
   const days = getMonthDays(state.selectedMonth);
   const summary = getSummary(days, todayKey);
 
-  const streakEmoji = summary.bestStreak >= 7 ? '🔥' : summary.bestStreak >= 3 ? '✨' : '💫';
-  const consistencyColor = summary.consistency >= 80 ? '#3ecf8e' : summary.consistency >= 50 ? '#f4b860' : '#f87171';
+  const streakEmoji = summary.bestStreak >= 7 ? "🔥" : summary.bestStreak >= 3 ? "✨" : "💫";
+  const consistencyColor = summary.consistency >= 80 ? "#3ecf8e" : summary.consistency >= 50 ? "#f4b860" : "#f87171";
 
   app.innerHTML = `
     <main class="shell">
+      ${state.storageAvailable ? "" : `
+        <section class="panel storage-warning" role="status" aria-live="polite">
+          <strong>Storage is unavailable.</strong>
+          <p>Your habits may not be saved in this browser session.</p>
+        </section>
+      `}
+
       <section class="panel hero">
         <div class="hero-inner">
           <div>
@@ -155,7 +184,7 @@ function render() {
             <div class="hero-stats">
               <span class="stat-chip"><span class="stat-icon">✅</span> Today: ${summary.todayDone} / ${summary.totalHabits}</span>
               <span class="stat-chip" style="color:${consistencyColor}; border-color:${consistencyColor}40;"><span class="stat-icon">📊</span> Consistency: ${summary.consistency}%</span>
-              <span class="stat-chip"><span class="stat-icon">${streakEmoji}</span> Best streak: ${summary.bestStreak} day${summary.bestStreak !== 1 ? 's' : ''}</span>
+              <span class="stat-chip"><span class="stat-icon">${streakEmoji}</span> Best streak: ${summary.bestStreak} day${summary.bestStreak !== 1 ? "s" : ""}</span>
             </div>
           </div>
         </div>
@@ -170,7 +199,7 @@ function render() {
           <div class="month-bar">
             <button type="button" data-action="prev-month">← Prev</button>
             <strong>${formatMonth(state.selectedMonth)}</strong>
-            <button type="button" data-action="next-month" ${state.selectedMonth < currentMonth ? '' : 'disabled'}>Next →</button>
+            <button type="button" data-action="next-month" ${state.selectedMonth < currentMonth ? "" : "disabled"}>Next →</button>
           </div>
         </div>
 
@@ -190,11 +219,11 @@ function render() {
                   <thead>
                     <tr>
                       <th class="task-col">Habit</th>
-                      ${days.map((day) => renderHeaderCell(day, todayKey)).join('')}
+                      ${days.map((day) => renderHeaderCell(day, todayKey)).join("")}
                     </tr>
                   </thead>
                   <tbody>
-                    ${state.tracker.habits.map((habit) => renderHabitRow(habit, days, todayKey)).join('')}
+                    ${state.tracker.habits.map((habit) => renderHabitRow(habit, days, todayKey)).join("")}
                   </tbody>
                 </table>
               </div>
@@ -232,7 +261,7 @@ function renderEmpty() {
       <div class="suggestions">
         ${SUGGESTED_HABITS.map((name) => `
           <button type="button" data-action="add-suggestion" data-name="${escapeHtml(name)}">+ ${escapeHtml(name)}</button>
-        `).join('')}
+        `).join("")}
       </div>
     </div>
   `;
@@ -241,7 +270,7 @@ function renderEmpty() {
 function renderHeaderCell(day, todayKey) {
   const isToday = day.key === todayKey;
   return `
-    <th class="date-head ${isToday ? 'is-today' : ''}" title="${day.key}${isToday ? ' — Today' : ''}">
+    <th class="date-head ${isToday ? "is-today" : ""}" title="${day.key}${isToday ? " — Today" : ""}">
       <div>${day.day}</div>
     </th>
   `;
@@ -256,7 +285,7 @@ function renderHabitRow(habit, days, todayKey) {
     <tr class="task-row" draggable="true" data-habit-row="${habit.id}">
       <th class="task-col">
         <div class="task-name">
-          <button type="button" class="drag-handle" aria-label="Drag ${escapeHtml(habit.name)}"></button>
+          <button type="button" class="drag-handle" aria-label="Drag to reorder ${escapeHtml(habit.name)}" title="Drag to reorder"></button>
           ${
             isEditing
               ? `
@@ -268,9 +297,9 @@ function renderHabitRow(habit, days, todayKey) {
                   </div>
                 </form>
               `
-              : `<button type="button" class="task-title" data-action="start-edit" data-habit-id="${habit.id}"><strong>${escapeHtml(habit.name)}</strong></button>`
+              : `<button type="button" class="task-title" data-action="start-edit" data-habit-id="${habit.id}" title="Edit ${escapeHtml(habit.name)}"><strong>${escapeHtml(habit.name)}</strong></button>`
           }
-          <small>${streak > 0 ? `<span class="streak-fire">${streak >= 7 ? '🔥' : '⚡'}</span> ${streak} day streak` : '<span style="opacity:0.6">No streak yet</span>'}</small>
+          <small>${streak > 0 ? `<span class="streak-fire">${streak >= 7 ? "🔥" : "⚡"}</span> ${streak} day streak` : '<span style="opacity:0.6">No streak yet</span>'}</small>
           <button type="button" class="remove-button" data-action="remove-habit" data-habit-id="${habit.id}" aria-label="Remove ${escapeHtml(habit.name)}" title="Remove">×</button>
         </div>
       </th>
@@ -287,7 +316,7 @@ function renderDayCell(habitId, day, todayKey) {
     return `
       <td>
         <label class="cell ${checked ? "is-done" : ""}">
-          <input type="checkbox" data-toggle data-habit-id="${habitId}" data-day-key="${day.key}" ${checked ? "checked" : ""} />
+          <input type="checkbox" data-toggle data-habit-id="${habitId}" data-day-key="${day.key}" ${checked ? "checked" : ""} aria-label="Mark habit complete for ${day.key}" />
         </label>
       </td>
     `;
@@ -303,7 +332,7 @@ function renderDayCell(habitId, day, todayKey) {
 
   return `
     <td>
-      <div class="cell is-locked ${checked ? 'is-done' : ''}"><span class="cell-mark">${checked ? '✓' : ''}</span></div>
+      <div class="cell is-locked ${checked ? "is-done" : ""}"><span class="cell-mark">${checked ? "✓" : ""}</span></div>
     </td>
   `;
 }
@@ -341,12 +370,12 @@ function renderGraph(dailyCounts) {
     .join("");
 
   const pathD = points.length > 0
-    ? `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`
-    : '';
+    ? `M ${points.map((point) => `${point.x},${point.y}`).join(" L ")}`
+    : "";
 
   const areaD = points.length > 0
-    ? `${pathD} L ${points[points.length-1].x},${padding.top + graphHeight} L ${points[0].x},${padding.top + graphHeight} Z`
-    : '';
+    ? `${pathD} L ${points[points.length - 1].x},${padding.top + graphHeight} L ${points[0].x},${padding.top + graphHeight} Z`
+    : "";
 
   return `
     <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Line graph of daily completion count">
@@ -363,9 +392,9 @@ function renderGraph(dailyCounts) {
       ${yTicks}
       <line class="axis" x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + graphHeight}"></line>
       <line class="axis" x1="${padding.left}" y1="${padding.top + graphHeight}" x2="${width - padding.right}" y2="${padding.top + graphHeight}"></line>
-      ${areaD ? `<path class="area" d="${areaD}"></path>` : ''}
-      ${pathD ? `<path class="line" d="${pathD}"></path>` : ''}
-      ${points.map((point) => `<circle class="point" cx="${point.x}" cy="${point.y}" r="3.5"></circle>`).join('')}
+      ${areaD ? `<path class="area" d="${areaD}"></path>` : ""}
+      ${pathD ? `<path class="line" d="${pathD}"></path>` : ""}
+      ${points.map((point) => `<circle class="point" cx="${point.x}" cy="${point.y}" r="3.5"></circle>`).join("")}
       ${labels}
     </svg>
   `;
@@ -398,7 +427,7 @@ function addHabit(name) {
     return;
   }
 
-  state.tracker.habits.push({ id: crypto.randomUUID(), name: value });
+  state.tracker.habits.push({ id: createHabitId(), name: value });
   saveTracker();
   render();
 }
@@ -440,21 +469,8 @@ function moveHabit(sourceId, targetId) {
   render();
 }
 
-app.addEventListener("submit", (event) => {
-  if (!(event.target instanceof HTMLFormElement) || !event.target.matches("[data-edit-form]")) {
-    return;
-  }
-
-  event.preventDefault();
-  const habitId = event.target.dataset.habitId || "";
-  const input = event.target.querySelector("input[name='habitName']");
-  const value = input instanceof HTMLInputElement ? input.value.trim() : "";
-  renameHabit(habitId, value);
-});
-
 function toggleCompletion(habitId, dayKey, checked) {
   const today = dateKey(new Date());
-  // Past/future cells are read-only; just ensure UI matches state (no re-render needed)
   if (dayKey !== today) {
     return;
   }
@@ -468,26 +484,22 @@ function toggleCompletion(habitId, dayKey, checked) {
   state.tracker.completions[dayKey] = Array.from(set);
   saveTracker();
 
-  // ── Surgical DOM update — no full page re-render ──────────
-
-  // 1. Toggle the cell highlight
-  const label = app.querySelector(
-    `label:has(input[data-habit-id="${habitId}"][data-day-key="${dayKey}"])`
+  const checkbox = app.querySelector(
+    `input[data-habit-id="${habitId}"][data-day-key="${dayKey}"]`
   );
+  const label = checkbox instanceof HTMLInputElement ? checkbox.closest("label") : null;
   if (label) {
-    label.classList.toggle('is-done', checked);
+    label.classList.toggle("is-done", checked);
   }
 
-  // 2. Refresh the streak label for this habit row
   const streakEl = app.querySelector(`[data-habit-row="${habitId}"] .task-name small`);
   if (streakEl) {
     const streak = calculateCurrentStreak(habitId, today);
     streakEl.innerHTML = streak > 0
-      ? `<span class="streak-fire">${streak >= 7 ? '🔥' : '⚡'}</span> ${streak} day streak`
+      ? `<span class="streak-fire">${streak >= 7 ? "🔥" : "⚡"}</span> ${streak} day streak`
       : '<span style="opacity:0.6">No streak yet</span>';
   }
 
-  // 3. Refresh hero stat chips & chart SVG without touching the rest of the DOM
   patchStats();
 }
 
@@ -498,25 +510,23 @@ function patchStats() {
   const summary = getSummary(days, todayKey);
 
   const consistencyColor =
-    summary.consistency >= 80 ? '#3ecf8e' :
-    summary.consistency >= 50 ? '#f4b860' : '#f87171';
-  const streakEmoji = summary.bestStreak >= 7 ? '🔥' : summary.bestStreak >= 3 ? '✨' : '💫';
+    summary.consistency >= 80 ? "#3ecf8e" :
+    summary.consistency >= 50 ? "#f4b860" : "#f87171";
+  const streakEmoji = summary.bestStreak >= 7 ? "🔥" : summary.bestStreak >= 3 ? "✨" : "💫";
 
-  const chips = app.querySelectorAll('.stat-chip');
+  const chips = app.querySelectorAll(".stat-chip");
   if (chips[0]) chips[0].innerHTML = `<span class="stat-icon">✅</span> Today: ${summary.todayDone} / ${summary.totalHabits}`;
   if (chips[1]) {
     chips[1].innerHTML = `<span class="stat-icon">📊</span> Consistency: ${summary.consistency}%`;
     chips[1].style.color = consistencyColor;
-    chips[1].style.borderColor = consistencyColor + '40';
+    chips[1].style.borderColor = `${consistencyColor}40`;
   }
-  if (chips[2]) chips[2].innerHTML = `<span class="stat-icon">${streakEmoji}</span> Best streak: ${summary.bestStreak} day${summary.bestStreak !== 1 ? 's' : ''}`;
+  if (chips[2]) chips[2].innerHTML = `<span class="stat-icon">${streakEmoji}</span> Best streak: ${summary.bestStreak} day${summary.bestStreak !== 1 ? "s" : ""}`;
 
-  // Refresh chart badge
-  const badge = app.querySelector('.chart-badge');
+  const badge = app.querySelector(".chart-badge");
   if (badge) badge.textContent = `${summary.consistency}% this month`;
 
-  // Refresh just the SVG inside chart-box
-  const chartBox = app.querySelector('.chart-box');
+  const chartBox = app.querySelector(".chart-box");
   if (chartBox) chartBox.innerHTML = renderGraph(summary.dailyCounts);
 }
 
@@ -525,19 +535,31 @@ function countForDay(dayKey) {
 }
 
 function renameHabit(habitId, nextName) {
-  if (!habitId || !nextName) {
+  const normalizedName = nextName.trim();
+  if (!habitId || !normalizedName) {
+    return;
+  }
+
+  const currentHabit = state.tracker.habits.find((habit) => habit.id === habitId);
+  if (!currentHabit) {
+    return;
+  }
+
+  if (currentHabit.name === normalizedName) {
+    state.editingHabitId = null;
+    render();
     return;
   }
 
   const duplicate = state.tracker.habits.some(
-    (habit) => habit.id !== habitId && habit.name.toLowerCase() === nextName.toLowerCase()
+    (habit) => habit.id !== habitId && habit.name.toLowerCase() === normalizedName.toLowerCase()
   );
   if (duplicate) {
     return;
   }
 
   state.tracker.habits = state.tracker.habits.map((habit) =>
-    habit.id === habitId ? { ...habit, name: nextName } : habit
+    habit.id === habitId ? { ...habit, name: normalizedName } : habit
   );
   state.editingHabitId = null;
   saveTracker();
@@ -551,6 +573,7 @@ function isCompleted(habitId, dayKey) {
 function loadTracker() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
+    state.storageAvailable = true;
     if (!raw) {
       return { habits: [], completions: {} };
     }
@@ -570,12 +593,26 @@ function loadTracker() {
 
     return { habits, completions };
   } catch {
+    state.storageAvailable = false;
     return { habits: [], completions: {} };
   }
 }
 
 function saveTracker() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tracker));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tracker));
+    state.storageAvailable = true;
+  } catch {
+    state.storageAvailable = false;
+  }
+}
+
+function createHabitId() {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return `habit-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function clearDragTargets() {
@@ -606,30 +643,6 @@ function calculateCurrentStreak(habitId, fromDateKey) {
     date.setDate(date.getDate() - 1);
   }
   return streak;
-}
-
-function calculateBestStreak(habitId, endDateKey) {
-  const keys = Object.keys(state.tracker.completions).sort();
-  if (keys.length === 0) {
-    return 0;
-  }
-
-  let date = new Date(`${endDateKey}T00:00:00`);
-  const first = keys[0];
-  let streak = 0;
-  let best = 0;
-
-  while (dateKey(date) >= first) {
-    if (isCompleted(habitId, dateKey(date))) {
-      streak += 1;
-      best = Math.max(best, streak);
-    } else {
-      streak = 0;
-    }
-    date.setDate(date.getDate() - 1);
-  }
-
-  return best;
 }
 
 function dateKey(date) {

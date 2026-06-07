@@ -2,8 +2,9 @@
   "name": "Habit Tracker",
   "short_name": "Tracker",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f4efe7",
-  "theme_color": "#f4efe7",
+  "background_color": "#060d14",
+  "theme_color": "#060d14",
   "icons": []
 }

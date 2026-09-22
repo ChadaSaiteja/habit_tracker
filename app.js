@@ -37,7 +37,16 @@ app.addEventListener("submit", (event) => {
 
 app.addEventListener("change", (event) => {
   const target = event.target;
-  if (!(target instanceof HTMLInputElement) || !target.matches("[data-toggle]")) {
+  if (!(target instanceof HTMLInputElement)) {
+    return;
+  }
+
+  if (target.matches("[data-import-input]")) {
+    importFromFile(target);
+    return;
+  }
+
+  if (!target.matches("[data-toggle]")) {
     return;
   }
 
@@ -87,6 +96,16 @@ app.addEventListener("click", (event) => {
 
   if (action === "add-suggestion") {
     addHabit(target.dataset.name || "");
+    return;
+  }
+
+  if (action === "export-json") {
+    exportTracker();
+    return;
+  }
+
+  if (action === "import-json") {
+    importTracker();
     return;
   }
 });
@@ -199,6 +218,15 @@ function render() {
           <input type="text" name="habit" maxlength="50" placeholder="+ Add a new habit or task…" aria-label="Add a task or habit" />
           <button type="submit">Add</button>
         </form>
+
+        <div class="data-bar">
+          <span class="data-bar-label">💾 Your data stays in this browser — export a backup anytime</span>
+          <div class="data-bar-actions">
+            <button type="button" data-action="import-json">📥 Import JSON</button>
+            <button type="button" data-action="export-json">📤 Export JSON</button>
+          </div>
+          <input type="file" accept="application/json,.json" data-import-input hidden />
+        </div>
       </section>
 
       <section class="panel">
@@ -582,23 +610,115 @@ function loadTracker(storageAvail) {
       return { habits: [], completions: {} };
     }
 
-    const parsed = JSON.parse(raw);
-    const habits = Array.isArray(parsed?.habits)
-      ? parsed.habits.filter((habit) => habit && typeof habit.id === "string" && typeof habit.name === "string")
-      : [];
-    const completions =
-      parsed?.completions && typeof parsed.completions === "object"
-        ? Object.fromEntries(
-            Object.entries(parsed.completions)
-              .filter(([key, value]) => typeof key === "string" && Array.isArray(value))
-              .map(([key, value]) => [key, value.filter((item) => typeof item === "string")])
-          )
-        : {};
-
-    return { habits, completions };
+    return normalizeTracker(JSON.parse(raw));
   } catch {
     return { habits: [], completions: {} };
   }
+}
+
+function normalizeTracker(parsed) {
+  const habits = Array.isArray(parsed?.habits)
+    ? parsed.habits.filter((habit) => habit && typeof habit.id === "string" && typeof habit.name === "string")
+    : [];
+  const completions =
+    parsed?.completions && typeof parsed.completions === "object" && !Array.isArray(parsed.completions)
+      ? Object.fromEntries(
+          Object.entries(parsed.completions)
+            .filter(([key, value]) => typeof key === "string" && Array.isArray(value))
+            .map(([key, value]) => [key, value.filter((item) => typeof item === "string")])
+        )
+      : {};
+
+  return { habits, completions };
+}
+
+function exportTracker() {
+  const payload = {
+    app: "habit-tracker-lite",
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    tracker: state.tracker
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `habit-tracker-${dateKey(new Date())}.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+
+  const count = state.tracker.habits.length;
+  showToast(`Exported ${count} habit${count === 1 ? "" : "s"} ✓`);
+}
+
+function importTracker() {
+  const input = app.querySelector("[data-import-input]");
+  if (input instanceof HTMLInputElement) {
+    input.value = "";
+    input.click();
+  }
+}
+
+function importFromFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) {
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    input.value = "";
+
+    try {
+      const parsed = JSON.parse(String(reader.result));
+      const source = parsed && typeof parsed === "object" && "tracker" in parsed ? parsed.tracker : parsed;
+
+      if (!source || typeof source !== "object" || !Array.isArray(source.habits)) {
+        showToast("Import failed — not a Habit Tracker export.", "error");
+        return;
+      }
+
+      state.tracker = normalizeTracker(source);
+      state.editingHabitId = null;
+      state.dragHabitId = null;
+      saveTracker();
+      render();
+
+      const count = state.tracker.habits.length;
+      showToast(`Imported ${count} habit${count === 1 ? "" : "s"} ✓`);
+    } catch {
+      showToast("Import failed — that file isn't valid JSON.", "error");
+    }
+  };
+
+  reader.onerror = () => {
+    input.value = "";
+    showToast("Import failed — could not read the file.", "error");
+  };
+
+  reader.readAsText(file);
+}
+
+let toastTimer = 0;
+
+function showToast(message, type = "success") {
+  let toast = document.querySelector(".toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.className = "toast";
+    toast.setAttribute("role", "status");
+    document.body.appendChild(toast);
+  }
+
+  toast.classList.toggle("is-error", type === "error");
+  toast.textContent = message;
+
+  requestAnimationFrame(() => toast.classList.add("show"));
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => toast.classList.remove("show"), 2800);
 }
 
 function saveTracker() {

@@ -223,7 +223,8 @@ button {
   color: var(--text);
 }
 
-.month-bar button {
+.month-bar button,
+.data-bar button {
   border: 1px solid var(--line-bright) !important;
   background: rgba(20, 38, 58, 0.8) !important;
   color: var(--text-dim) !important;
@@ -234,12 +235,35 @@ button {
   letter-spacing: 0.01em;
 }
 
-.month-bar button:not(:disabled):hover {
+.month-bar button:not(:disabled):hover,
+.data-bar button:not(:disabled):hover {
   background: var(--accent-soft) !important;
   border-color: var(--accent) !important;
   color: var(--accent) !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 14px rgba(62, 207, 142, 0.2) !important;
+}
+
+/* ── Data Bar (export / import) ─────────────────────────── */
+.data-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  border-top: 1px dashed var(--line);
+  margin-top: 0.15rem;
+  padding-top: 0.95rem;
+}
+
+.data-bar-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.data-bar-actions {
+  display: flex;
+  gap: 0.55rem;
 }
 
 /* ── Buttons ────────────────────────────────────────────── */
@@ -617,12 +641,16 @@ button {
   margin: 0;
   accent-color: var(--accent);
   cursor: pointer;
-  transition: transform var(--transition);
+  transition: transform var(--transition), filter var(--transition);
 }
 
 .cell input[type="checkbox"]:hover {
-  transform: scale(1.25);
+  transform: scale(1.15);
   filter: drop-shadow(0 0 4px rgba(62, 207, 142, 0.5));
+}
+
+.cell input[type="checkbox"]:active {
+  transform: scale(0.92);
 }
 
 .cell.is-locked {
@@ -845,6 +873,7 @@ button {
 }
 
 .shell > * {
+  min-width: 0;
   animation: fadeSlideIn 0.3s ease both;
 }
 
@@ -854,14 +883,42 @@ button {
 .shell > *:nth-child(4) { animation-delay: 0.18s; }
 
 @keyframes checkPop {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.35); }
-  70%  { transform: scale(0.9); }
-  100% { transform: scale(1); }
+  0%   { scale: 0.55; }
+  100% { scale: 1; }
 }
 
-.cell.is-done {
-  animation: checkPop 0.28s ease;
+.cell.is-done input[type="checkbox"] {
+  animation: checkPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Toast ──────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.4rem;
+  z-index: 100;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(10, 24, 38, 0.96);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(62, 207, 142, 0.12);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast.is-error {
+  border-color: var(--danger);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(248, 113, 113, 0.15);
 }
 
 /* ── Responsive ─────────────────────────────────────────── */
